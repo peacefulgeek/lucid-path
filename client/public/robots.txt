@@ -1,0 +1,6 @@
+# The Lucid Path — robots.txt
+# Served by Express in production; this is the static fallback.
+User-agent: *
+Allow: /
+
+Sitemap: https://lucidpath.love/sitemap-index.xml
