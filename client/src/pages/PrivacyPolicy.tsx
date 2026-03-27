@@ -31,12 +31,12 @@ export default function PrivacyPolicy() {
         <h2>What We Do NOT Collect</h2>
         <p>We are committed to your privacy. We do not:</p>
         <ul>
-          <li>Use Google Analytics, Plausible, or any analytics tracking service</li>
+          <li>Use any analytics tracking service or visitor monitoring tools</li>
           <li>Use third-party advertising or tracking cookies</li>
           <li>Collect personal information beyond what you voluntarily provide</li>
           <li>Sell, rent, or share your information with third parties</li>
           <li>Use any database service to store personal data</li>
-          <li>Require account creation, login, or authentication</li>
+          <li>Require account creation or user registration of any kind</li>
         </ul>
 
         <h2>Cookies</h2>
@@ -46,7 +46,7 @@ export default function PrivacyPolicy() {
 
         <h2>Email Storage</h2>
         <p>
-          Newsletter subscriptions are stored as a simple log file on Bunny CDN storage infrastructure. We do not send automated emails. We do not use email marketing platforms such as MailerLite, SMTP2GO, or similar services. Your email is stored solely for potential future communication about {SITE_NAME} content.
+          Newsletter subscriptions are stored as a simple log file on Bunny CDN storage infrastructure. We do not send automated emails. We do not use third-party email marketing platforms of any kind. Your email is stored solely for potential future communication about {SITE_NAME} content.
         </p>
 
         <h2>Third-Party Services</h2>

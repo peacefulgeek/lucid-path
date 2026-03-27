@@ -496,9 +496,22 @@ Sitemap: ${SITE_DOMAIN}/sitemap-index.xml
 `);
   });
 
-  // ─── SPA FALLBACK ───
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(staticPath, "index.html"));
+  // ─── KNOWN SPA ROUTES (return 200) ───
+  const knownRoutes = [
+    "/", "/articles", "/start-here", "/about", "/privacy", "/terms",
+    "/technique-finder", "/quiz", "/404",
+  ];
+  const knownPrefixes = ["/article/", "/category/"];
+
+  app.get("*", (req, res) => {
+    const p = req.path;
+    const isKnown = knownRoutes.includes(p) ||
+      knownPrefixes.some((prefix) => p.startsWith(prefix));
+    if (!isKnown) {
+      res.status(404).sendFile(path.join(staticPath, "index.html"));
+    } else {
+      res.sendFile(path.join(staticPath, "index.html"));
+    }
   });
 
   const port = process.env.PORT || 3000;
