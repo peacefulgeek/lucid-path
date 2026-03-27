@@ -17,3 +17,4 @@
 - [ ] Fix cron: 5/day initially, then 5/week ongoing
 - [ ] Confirm all 300 hero images return HTTP 200 from Bunny CDN
 - [ ] Confirm all 300 OG images return HTTP 200 from Bunny CDN
+# Post-build verified 2026-03-27T14:05:25Z
