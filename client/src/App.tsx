@@ -16,7 +16,9 @@ const About = lazy(() => import("./pages/About"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const TechniqueFinder = lazy(() => import("./pages/TechniqueFinder"));
-const QuizPage = lazy(() => import("./pages/QuizPage"));
+const ToolsPage = lazy(() => import("./pages/ToolsPage"));
+const QuizzesPage = lazy(() => import("./pages/QuizzesPage"));
+const AssessmentsPage = lazy(() => import("./pages/AssessmentsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function PageLoader() {
@@ -40,7 +42,9 @@ function Router() {
         <Route path="/privacy" component={PrivacyPolicy} />
         <Route path="/terms" component={TermsOfService} />
         <Route path="/technique-finder" component={TechniqueFinder} />
-        <Route path="/quiz/:quizId" component={QuizPage} />
+        <Route path="/tools" component={ToolsPage} />
+        <Route path="/quizzes" component={QuizzesPage} />
+        <Route path="/assessments" component={AssessmentsPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

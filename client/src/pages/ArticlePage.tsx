@@ -10,12 +10,14 @@ import {
   AUTHOR_TITLE,
   AUTHOR_LINK,
   AUTHOR_BIO,
+  AUTHOR_IMAGE,
   SITE_NAME,
   SITE_DOMAIN,
   type Article,
 } from "@/lib/articles";
 import ArticleCard from "@/components/ArticleCard";
-import { Clock, Share2, Facebook, Twitter, Linkedin, Copy, Check, ChevronLeft } from "lucide-react";
+import NewsletterForm from "@/components/NewsletterForm";
+import { Clock, Share2, Facebook, Twitter, Linkedin, Copy, Check, ChevronLeft, ExternalLink, AlertTriangle } from "lucide-react";
 
 function ShareButtons({ article }: { article: Article }) {
   const [copied, setCopied] = useState(false);
@@ -78,7 +80,7 @@ function TableOfContents({ sections }: { sections: Article["sections"] }) {
           href={`#section-${i}`}
           className="px-3 py-1 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 transition-colors"
         >
-          {s.heading}
+          {typeof s === 'object' && 'heading' in s ? s.heading : (s as any).h2 || `Section ${i + 1}`}
         </a>
       ))}
     </nav>
@@ -94,7 +96,13 @@ function ArticleJsonLd({ article }: { article: Article }) {
     image: article.heroImage,
     datePublished: article.dateISO,
     dateModified: article.dateISO,
-    author: { "@type": "Person", name: AUTHOR_NAME },
+    author: {
+      "@type": "Person",
+      name: AUTHOR_NAME,
+      url: AUTHOR_LINK,
+      image: AUTHOR_IMAGE,
+      jobTitle: AUTHOR_TITLE,
+    },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
@@ -118,18 +126,19 @@ function ArticleJsonLd({ article }: { article: Article }) {
     ],
   };
 
-  const schemas = [articleSchema, breadcrumbSchema];
+  const schemas: any[] = [articleSchema, breadcrumbSchema];
 
-  if (article.faqs.length > 0) {
+  const faqs = article.faqs || [];
+  if (faqs.length > 0) {
     schemas.push({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: article.faqs.map((faq) => ({
+      mainEntity: faqs.map((faq: any) => ({
         "@type": "Question",
-        name: faq.question,
-        acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        name: faq.question || faq.q,
+        acceptedAnswer: { "@type": "Answer", text: faq.answer || faq.a },
       })),
-    } as any);
+    });
   }
 
   return (
@@ -146,8 +155,26 @@ function ArticleJsonLd({ article }: { article: Article }) {
 }
 
 function renderContent(content: string) {
-  // Content is already HTML from the generator
   return <div dangerouslySetInnerHTML={{ __html: content }} />;
+}
+
+function getSectionHeading(section: any): string {
+  return section.heading || section.h2 || 'Untitled Section';
+}
+
+function getSectionContent(section: any): string {
+  if (section.content) return section.content;
+  if (section.paragraphs) {
+    if (Array.isArray(section.paragraphs)) {
+      return section.paragraphs.map((p: string) => `<p>${p}</p>`).join('\n');
+    }
+    return `<p>${section.paragraphs}</p>`;
+  }
+  return '';
+}
+
+function hasAffiliateLink(article: Article): boolean {
+  return !!(article.outboundLink && article.outboundLink.url && article.outboundLink.url.includes('amazon.com'));
 }
 
 export default function ArticlePage() {
@@ -185,7 +212,6 @@ export default function ArticlePage() {
     );
   }
 
-  // Check if published
   const isPublished = new Date(article.dateISO) <= new Date();
   if (!isPublished) {
     return (
@@ -197,11 +223,15 @@ export default function ArticlePage() {
     );
   }
 
+  const sections = article.sections || [];
+  const faqs = article.faqs || [];
+  const internalLinks = article.internalLinks || [];
+  const selectedPhrases = article.selectedPhrases || [];
+  const isAffiliate = hasAffiliateLink(article);
+
   return (
     <>
       <ArticleJsonLd article={article} />
-
-      {/* OG meta tags */}
       <MetaTags article={article} />
 
       {/* Hero image */}
@@ -250,8 +280,15 @@ export default function ArticlePage() {
               <ShareButtons article={article} />
             </header>
 
+            {/* Affiliate disclosure — only on articles with Amazon links */}
+            {isAffiliate && (
+              <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50/50 text-sm text-amber-900">
+                This article contains affiliate links. We may earn a small commission if you make a purchase — at no extra cost to you.
+              </div>
+            )}
+
             {/* Table of Contents */}
-            <TableOfContents sections={article.sections} />
+            <TableOfContents sections={sections} />
 
             {/* Article body */}
             <div className="article-body">
@@ -261,22 +298,26 @@ export default function ArticlePage() {
               </div>
 
               {/* Lived experience */}
-              <p className="italic text-muted-foreground border-l-2 border-[var(--aurora)] pl-4 mb-6">
-                {article.livedExperience}
-              </p>
+              {article.livedExperience && (
+                <p className="italic text-muted-foreground border-l-2 border-[var(--aurora)] pl-4 mb-6">
+                  {article.livedExperience}
+                </p>
+              )}
 
               {/* Named reference */}
-              <p className="mb-6">
-                {typeof article.namedReference === 'string'
-                  ? article.namedReference
-                  : article.namedReference?.text}
-              </p>
+              {article.namedReference && (
+                <p className="mb-6">
+                  {typeof article.namedReference === 'string'
+                    ? article.namedReference
+                    : article.namedReference?.text}
+                </p>
+              )}
 
               {/* Sections */}
-              {article.sections.map((section, i) => (
+              {sections.map((section: any, i: number) => (
                 <section key={i} id={`section-${i}`}>
-                  <h2>{section.heading}</h2>
-                  {renderContent(section.content)}
+                  <h2>{getSectionHeading(section)}</h2>
+                  {renderContent(getSectionContent(section))}
                 </section>
               ))}
 
@@ -287,37 +328,45 @@ export default function ArticlePage() {
                     href={article.outboundLink.url}
                     {...(article.outboundLink.rel ? { rel: article.outboundLink.rel } : {})}
                     {...(article.outboundLink.url.startsWith("http") && !article.outboundLink.url.includes("kalesh.love") ? { target: "_blank" } : {})}
+                    className="text-[var(--aurora-dim)] hover:underline"
                   >
                     {article.outboundLink.anchor}
                   </a>
+                  {article.outboundLink.url.includes('amazon.com') && (
+                    <span className="text-xs text-muted-foreground ml-1">(paid link)</span>
+                  )}
                 </p>
               )}
 
               {/* Internal links */}
-              {article.internalLinks.length > 0 && (
+              {internalLinks.length > 0 && (
                 <div className="my-8 p-4 rounded-lg bg-muted/50">
                   <h3 className="text-sm font-semibold mb-2">Continue Exploring</h3>
                   <ul className="space-y-1">
-                    {article.internalLinks.map((link, i) => (
-                      <li key={i}>
-                        <Link href={`/article/${link.slug}`} className="text-sm text-[var(--aurora-dim)] hover:underline">
-                          {link.anchor}
-                        </Link>
-                      </li>
-                    ))}
+                    {internalLinks.map((link: any, i: number) => {
+                      const slug = typeof link === 'string' ? link : link.slug;
+                      const anchor = typeof link === 'string' ? slug.replace(/-/g, ' ') : link.anchor;
+                      return (
+                        <li key={i}>
+                          <Link href={`/article/${slug}`} className="text-sm text-[var(--aurora-dim)] hover:underline">
+                            {anchor}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
 
               {/* FAQs */}
-              {article.faqs.length > 0 && (
+              {faqs.length > 0 && (
                 <section className="my-10">
                   <h2>Frequently Asked Questions</h2>
                   <div className="space-y-4">
-                    {article.faqs.map((faq, i) => (
+                    {faqs.map((faq: any, i: number) => (
                       <div key={i} className="border border-border rounded-lg p-4">
-                        <h3 className="font-semibold text-base mb-2">{faq.question}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
+                        <h3 className="font-semibold text-base mb-2">{faq.question || faq.q}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{faq.answer || faq.a}</p>
                       </div>
                     ))}
                   </div>
@@ -330,9 +379,9 @@ export default function ArticlePage() {
               </div>
 
               {/* Selected phrases as pull quotes */}
-              {article.selectedPhrases.length > 0 && (
+              {selectedPhrases.length > 0 && (
                 <div className="my-8">
-                  {article.selectedPhrases.slice(0, 2).map((phrase, i) => (
+                  {selectedPhrases.slice(0, 2).map((phrase: string, i: number) => (
                     <blockquote key={i} className="text-lg italic my-4">
                       "{phrase}"
                     </blockquote>
@@ -341,34 +390,101 @@ export default function ArticlePage() {
               )}
             </div>
 
-            {/* Bio card at VERY BOTTOM */}
-            <div className="mt-12 p-6 rounded-xl border border-border bg-card">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-full bg-[var(--twilight)] flex items-center justify-center text-white font-heading font-700 text-xl shrink-0">
-                  K
-                </div>
+            {/* Health Disclaimer Card */}
+            <div className="mt-8 p-5 rounded-xl border border-amber-200 bg-amber-50/30">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-heading font-700 text-base">{AUTHOR_NAME}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{AUTHOR_TITLE}</p>
-                  <p className="text-sm leading-relaxed mb-2">{AUTHOR_BIO}</p>
-                  <a
-                    href={AUTHOR_LINK}
-                    className="text-sm text-[var(--aurora-dim)] hover:underline"
-                  >
-                    Visit Kalesh's Website
-                  </a>
+                  <h4 className="font-heading font-700 text-sm text-amber-900 mb-1">Health & Wellness Disclaimer</h4>
+                  <p className="text-xs leading-relaxed text-amber-800">
+                    The content on {SITE_NAME} is for educational and informational purposes only. It is not intended as a substitute for professional medical advice, diagnosis, or treatment. Lucid dreaming practices may not be suitable for everyone, particularly individuals with certain sleep disorders or mental health conditions. Always consult a qualified healthcare provider before making changes to your sleep habits or health practices. Never disregard professional medical advice or delay seeking treatment because of something you have read on this site.
+                  </p>
                 </div>
               </div>
             </div>
+
+            {/* Bio card at VERY BOTTOM — with real image and Book a Session */}
+            <div className="mt-8 p-6 rounded-xl border border-border bg-card">
+              <div className="flex items-start gap-4">
+                <img
+                  src={AUTHOR_IMAGE}
+                  alt={AUTHOR_NAME}
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 rounded-full object-cover shrink-0"
+                />
+                <div>
+                  <h4 className="font-heading font-700 text-base">{AUTHOR_NAME}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{AUTHOR_TITLE}</p>
+                  <p className="text-sm leading-relaxed mb-3">{AUTHOR_BIO}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={AUTHOR_LINK}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[var(--twilight)] text-[var(--starlight)] text-xs font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Book a Session
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <a
+                      href={AUTHOR_LINK}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-border text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      Visit Kalesh's Website
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tools recommendation link */}
+            <div className="mt-6 p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Looking for tools to support your practice?</p>
+              <Link href="/tools" className="text-sm text-[var(--aurora-dim)] hover:underline font-medium">
+                Browse Our Recommended Tools →
+              </Link>
+            </div>
           </div>
 
-          {/* Right: Sidebar (40%) — tall image gallery + pull quotes + popular */}
+          {/* Right: Sidebar (40%) */}
           <aside className="lg:w-[40%]">
             <div className="lg:sticky lg:top-24 space-y-8">
+              {/* Kalesh bio card — top right */}
+              <div className="p-5 rounded-xl border border-border bg-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <img
+                    src={AUTHOR_IMAGE}
+                    alt={AUTHOR_NAME}
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-heading font-700 text-sm">{AUTHOR_NAME}</h4>
+                    <p className="text-xs text-muted-foreground">{AUTHOR_TITLE}</p>
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground mb-3">
+                  {AUTHOR_BIO}
+                </p>
+                <a
+                  href={AUTHOR_LINK}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[var(--twilight)] text-[var(--starlight)] text-xs font-medium hover:opacity-90 transition-opacity w-full justify-center"
+                >
+                  Visit Kalesh's Website
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
               {/* Pull quotes */}
-              {article.selectedPhrases.length > 2 && (
+              {selectedPhrases.length > 2 && (
                 <div className="space-y-4">
-                  {article.selectedPhrases.slice(2).map((phrase, i) => (
+                  {selectedPhrases.slice(2).map((phrase: string, i: number) => (
                     <div key={i} className="p-4 rounded-lg bg-gradient-to-br from-[var(--twilight)]/5 to-[var(--aurora)]/5 border-l-3 border-[var(--aurora)]">
                       <p className="text-sm italic leading-relaxed">"{phrase}"</p>
                     </div>
@@ -433,13 +549,8 @@ export default function ArticlePage() {
   );
 }
 
-// Import NewsletterForm at the top level
-import NewsletterForm from "@/components/NewsletterForm";
-
-// Meta tags component (updates document head)
 function MetaTags({ article }: { article: Article }) {
   useEffect(() => {
-    // Update meta tags dynamically
     const setMeta = (name: string, content: string, property?: boolean) => {
       const attr = property ? "property" : "name";
       let el = document.querySelector(`meta[${attr}="${name}"]`);
@@ -460,19 +571,7 @@ function MetaTags({ article }: { article: Article }) {
     setMeta("twitter:title", `${article.title} — ${SITE_NAME}`);
     setMeta("twitter:description", article.metaDescription);
     setMeta("twitter:image", article.ogImage);
-
-    // Canonical
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.setAttribute("rel", "canonical");
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute("href", `${SITE_DOMAIN}/article/${article.slug}`);
-
-    return () => {
-      document.title = SITE_NAME;
-    };
+    setMeta("twitter:card", "summary_large_image");
   }, [article]);
 
   return null;

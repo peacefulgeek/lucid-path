@@ -6,9 +6,11 @@ import {
   AUTHOR_TITLE,
   AUTHOR_LINK,
   AUTHOR_BIO,
+  AUTHOR_IMAGE,
   EDITORIAL_NAME,
   getPublishedCount,
 } from "@/lib/articles";
+import { ExternalLink } from "lucide-react";
 
 export default function About() {
   useEffect(() => {
@@ -29,6 +31,7 @@ export default function About() {
               name: AUTHOR_NAME,
               description: AUTHOR_BIO,
               url: AUTHOR_LINK,
+              image: AUTHOR_IMAGE,
               jobTitle: AUTHOR_TITLE,
             },
           }),
@@ -59,24 +62,41 @@ export default function About() {
           </p>
         </div>
 
-        {/* Kalesh as Consciousness Teacher card */}
+        {/* Kalesh as Consciousness Teacher card — with real image */}
         <div className="p-6 rounded-xl border border-border bg-card">
-          <div className="flex items-start gap-4">
-            <div className="w-20 h-20 rounded-full bg-[var(--twilight)] flex items-center justify-center text-white font-heading font-800 text-2xl shrink-0">
-              K
-            </div>
+          <div className="flex flex-col sm:flex-row items-start gap-5">
+            <img
+              src={AUTHOR_IMAGE}
+              alt={AUTHOR_NAME}
+              width={120}
+              height={120}
+              className="w-28 h-28 rounded-full object-cover shrink-0"
+            />
             <div>
               <h3 className="font-heading text-lg font-700">{AUTHOR_NAME}</h3>
               <p className="text-sm text-[var(--aurora-dim)] font-medium mb-2">{AUTHOR_TITLE}</p>
-              <p className="text-sm leading-relaxed mb-3">
+              <p className="text-sm leading-relaxed mb-4">
                 {AUTHOR_BIO}
               </p>
-              <a
-                href={AUTHOR_LINK}
-                className="inline-flex items-center text-sm text-[var(--aurora-dim)] hover:underline font-medium"
-              >
-                Visit Kalesh's Website →
-              </a>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={AUTHOR_LINK}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[var(--twilight)] text-[var(--starlight)] text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  Book a Session
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href={AUTHOR_LINK}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full border border-border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Visit Kalesh's Website
+                </a>
+              </div>
             </div>
           </div>
         </div>

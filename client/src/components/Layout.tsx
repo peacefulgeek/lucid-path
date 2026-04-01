@@ -87,6 +87,14 @@ export default function Layout({ children }: LayoutProps) {
               </Link>
             ))}
             <Link
+              href="/tools"
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                location === "/tools" ? "bg-[var(--twilight)] text-[var(--starlight)]" : "hover:bg-muted"
+              }`}
+            >
+              Tools
+            </Link>
+            <Link
               href="/start-here"
               className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
                 location === "/start-here" ? "bg-[var(--twilight)] text-[var(--starlight)]" : "hover:bg-muted"
@@ -144,14 +152,23 @@ export default function Layout({ children }: LayoutProps) {
                   {cat.name}
                 </Link>
               ))}
+              <Link href="/tools" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
+                Tools We Recommend
+              </Link>
+              <Link href="/quizzes" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
+                Quizzes
+              </Link>
+              <Link href="/assessments" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
+                Assessments
+              </Link>
               <Link href="/start-here" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
                 Start Here
               </Link>
-              <Link href="/about" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
-                About
-              </Link>
               <Link href="/technique-finder" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
                 Technique Finder
+              </Link>
+              <Link href="/about" className="px-4 py-2 rounded-lg hover:bg-muted text-sm font-medium">
+                About
               </Link>
             </nav>
           </div>
@@ -192,6 +209,9 @@ export default function Layout({ children }: LayoutProps) {
             <div>
               <h4 className="font-heading text-sm font-600 uppercase tracking-wider mb-3 opacity-70">Resources</h4>
               <ul className="space-y-2">
+                <li><Link href="/tools" className="text-sm opacity-80 hover:opacity-100 transition-opacity">Tools We Recommend</Link></li>
+                <li><Link href="/quizzes" className="text-sm opacity-80 hover:opacity-100 transition-opacity">Quizzes</Link></li>
+                <li><Link href="/assessments" className="text-sm opacity-80 hover:opacity-100 transition-opacity">Assessments</Link></li>
                 <li><Link href="/start-here" className="text-sm opacity-80 hover:opacity-100 transition-opacity">Start Here</Link></li>
                 <li><Link href="/technique-finder" className="text-sm opacity-80 hover:opacity-100 transition-opacity">Technique Finder</Link></li>
                 <li><Link href="/about" className="text-sm opacity-80 hover:opacity-100 transition-opacity">About</Link></li>
@@ -210,8 +230,11 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
-          {/* Disclaimer + copyright */}
+          {/* Amazon Associate + Disclaimer + copyright */}
           <div className="mt-8 pt-6 border-t border-white/10 text-xs opacity-60">
+            <p className="mb-2">
+              As an Amazon Associate I earn from qualifying purchases.
+            </p>
             <p className="mb-2">
               <strong>Disclaimer:</strong> The content on {SITE_NAME} is for educational and informational purposes only.
               It is not intended as a substitute for professional medical advice, diagnosis, or treatment.

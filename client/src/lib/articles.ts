@@ -44,7 +44,8 @@ export const AUTHOR_NAME = "Kalesh";
 export const AUTHOR_TITLE = "Consciousness Teacher & Writer";
 export const AUTHOR_LINK = "https://kalesh.love";
 export const EDITORIAL_NAME = "The Lucid Path Editorial";
-export const AUTHOR_BIO = "Kalesh is a consciousness teacher and writer whose work explores the intersection of ancient contemplative traditions and modern neuroscience. With decades of practice in meditation, breathwork, and somatic inquiry, he guides others toward embodied awareness.";
+export const AUTHOR_IMAGE = "https://lucid-path.b-cdn.net/images/author/kalesh.webp";
+export const AUTHOR_BIO = "Kalesh is a mystic and spiritual advisor who brings ancient wisdom and depth to life's biggest decisions. His work bridges contemplative traditions and modern consciousness research, guiding seekers toward embodied awareness through meditation, breathwork, and somatic inquiry.";
 
 const allArticles: Article[] = (articlesData as any).articles;
 

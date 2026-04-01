@@ -11,7 +11,7 @@ export default function TermsOfService() {
       <h1 className="font-heading text-3xl font-800 mb-6" style={{ color: "var(--twilight)" }}>
         Terms of Service
       </h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: March 27, 2026</p>
+      <p className="text-sm text-muted-foreground mb-8">Last updated: April 1, 2026</p>
 
       <div className="article-body">
         <h2>Acceptance of Terms</h2>
@@ -54,9 +54,9 @@ export default function TermsOfService() {
           By subscribing to our newsletter, you consent to receiving occasional communications from {SITE_NAME}. You may unsubscribe at any time. We do not share your email address with third parties.
         </p>
 
-        <h2>External Links</h2>
+        <h2>External Links &amp; Affiliate Disclosure</h2>
         <p>
-          Our site may contain links to external websites. We are not responsible for the content, privacy practices, or availability of these external sites. Following external links is at your own risk.
+          Our site may contain links to external websites, including affiliate links. As an Amazon Associate we earn from qualifying purchases. Some links on this site are affiliate links, meaning we may earn a small commission at no additional cost to you. We are not responsible for the content, privacy practices, or availability of external sites. Following external links is at your own risk.
         </p>
 
         <h2>Limitation of Liability</h2>
