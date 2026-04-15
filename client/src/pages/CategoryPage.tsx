@@ -16,6 +16,7 @@ export default function CategoryPage() {
   const articles = useMemo(() => getArticlesByCategory(params.slug || ""), [params.slug]);
   const visible = articles.slice(0, visibleCount);
   const hasMore = visibleCount < articles.length;
+  const coverImage = articles[0]?.heroImage;
 
   useEffect(() => {
     if (category) {
@@ -23,7 +24,6 @@ export default function CategoryPage() {
     }
   }, [category]);
 
-  // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800 && hasMore) {
@@ -38,7 +38,7 @@ export default function CategoryPage() {
     return (
       <div className="container py-20 text-center">
         <h1 className="font-heading text-3xl font-700 mb-4">Category Not Found</h1>
-        <Link href="/articles" className="text-[var(--aurora-dim)] underline">Browse all articles</Link>
+        <Link href="/articles" className="text-[var(--aurora)] underline">Browse all articles</Link>
       </div>
     );
   }
@@ -54,33 +54,49 @@ export default function CategoryPage() {
             name: category.name,
             description: category.description,
             url: `${SITE_DOMAIN}/category/${category.slug}`,
-            mainEntity: {
-              "@type": "ItemList",
-              numberOfItems: articles.length,
-            },
+            mainEntity: { "@type": "ItemList", numberOfItems: articles.length },
           }),
         }}
       />
 
-      <section className="container py-10">
-        <h1 className="font-heading text-3xl md:text-4xl font-800 mb-2" style={{ color: "var(--twilight)" }}>
-          {category.name}
-        </h1>
-        <p className="text-muted-foreground mb-8 max-w-2xl">
-          {category.description} — {articles.length} article{articles.length !== 1 ? "s" : ""}.
-        </p>
-
-        <div className="masonry-grid">
-          {visible.map((article, i) => (
-            <ArticleCard key={article.slug} article={article} priority={i < 6} />
-          ))}
+      {/* Hero with category cover image */}
+      <section className="relative min-h-[40vh] flex items-end overflow-hidden">
+        <div className="absolute inset-0">
+          {coverImage && (
+            <img src={coverImage} alt={category.name} className="w-full h-full object-cover" loading="eager" />
+          )}
         </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a0a2e]/90 via-[#1a0a2e]/40 to-transparent" />
+        <div className="container relative z-10 pb-10 pt-28">
+          <span className="text-[var(--aurora)] text-sm font-medium tracking-widest uppercase">Category</span>
+          <h1 className="font-heading text-4xl md:text-5xl font-800 text-white mt-2 mb-3">
+            {category.name}
+          </h1>
+          <p className="text-white/70 text-lg max-w-2xl">
+            {category.description} — {articles.length} article{articles.length !== 1 ? "s" : ""}.
+          </p>
+        </div>
+      </section>
 
-        {hasMore && (
-          <div className="text-center mt-10">
-            <div className="w-6 h-6 border-2 border-[var(--aurora)] border-t-transparent rounded-full animate-spin mx-auto" />
+      <section className="py-10">
+        <div className="container">
+          <div className="masonry-grid">
+            {visible.map((article, i) => (
+              <ArticleCard key={article.slug} article={article} priority={i < 6} />
+            ))}
           </div>
-        )}
+
+          {hasMore && (
+            <div className="text-center mt-12">
+              <button
+                onClick={() => setVisibleCount((c) => c + 24)}
+                className="px-10 py-4 rounded-full bg-[var(--twilight)] text-white font-medium hover:shadow-lg hover:shadow-[var(--twilight)]/30 hover:scale-105 transition-all duration-300"
+              >
+                Load More Articles
+              </button>
+            </div>
+          )}
+        </div>
       </section>
     </>
   );

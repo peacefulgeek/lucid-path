@@ -34,18 +34,18 @@ export default function NewsletterForm({ source, variant = "light" }: Newsletter
   if (status === "success") {
     return (
       <p className={`text-sm font-medium ${variant === "dark" ? "text-[var(--aurora)]" : "text-[var(--aurora-dim)]"}`}>
-        Thanks for subscribing!
+        Welcome aboard. Check your inbox for a confirmation.
       </p>
     );
   }
 
   const inputClass = variant === "dark"
-    ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
-    : "bg-background border-border text-foreground";
+    ? "bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[var(--aurora)]/50"
+    : "bg-background border-border text-foreground focus:border-[var(--aurora)]/50";
 
   const buttonClass = variant === "dark"
-    ? "bg-[var(--aurora)] text-[var(--twilight)] hover:bg-[var(--aurora-dim)]"
-    : "bg-[var(--twilight)] text-[var(--starlight)] hover:opacity-90";
+    ? "bg-[var(--aurora)] text-[#1a0a2e] font-semibold hover:shadow-lg hover:shadow-[var(--aurora)]/30"
+    : "bg-[var(--twilight)] text-white font-semibold hover:shadow-lg hover:shadow-[var(--twilight)]/30";
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
@@ -57,18 +57,18 @@ export default function NewsletterForm({ source, variant = "light" }: Newsletter
         onChange={(e) => setEmail(e.target.value)}
         placeholder="your@email.com"
         required
-        className={`flex-1 px-3 py-2 rounded-lg border text-sm ${inputClass} focus:outline-none focus:ring-2 focus:ring-[var(--aurora)]`}
+        className={`flex-1 px-4 py-2.5 rounded-full border text-sm ${inputClass} focus:outline-none focus:ring-2 focus:ring-[var(--aurora)]/30 transition-all`}
         aria-label="Email address"
       />
       <button
         type="submit"
         disabled={status === "loading"}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${buttonClass} disabled:opacity-50`}
+        className={`px-5 py-2.5 rounded-full text-sm transition-all duration-300 ${buttonClass} disabled:opacity-50`}
       >
         {status === "loading" ? "..." : "Join"}
       </button>
       {status === "error" && (
-        <p className="text-xs text-red-500 mt-1">Something went wrong. Try again.</p>
+        <p className="text-xs text-red-400 mt-1">Something went wrong. Try again.</p>
       )}
     </form>
   );
