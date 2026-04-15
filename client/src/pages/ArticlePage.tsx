@@ -291,8 +291,13 @@ export default function ArticlePage() {
             <TableOfContents sections={sections} />
 
             {/* Article body */}
-            <div className="article-body">
-              {/* Opener */}
+            <div className="article-body prose prose-lg max-w-none">
+              {article.body ? (
+                /* Full body HTML from generated content */
+                <div dangerouslySetInnerHTML={{ __html: article.body }} />
+              ) : (
+              <>
+              {/* Fallback: section-based rendering */}
               <div className="article-opener">
                 <p className="text-lg leading-relaxed mb-6">{article.opener}</p>
               </div>
@@ -387,6 +392,8 @@ export default function ArticlePage() {
                     </blockquote>
                   ))}
                 </div>
+              )}
+              </>
               )}
             </div>
 

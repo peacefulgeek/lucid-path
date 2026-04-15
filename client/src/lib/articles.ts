@@ -26,6 +26,7 @@ export interface Article {
   metaDescription: string;
   heroImage: string;
   ogImage: string;
+  body?: string;
 }
 
 export const CATEGORIES = [
