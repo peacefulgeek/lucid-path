@@ -12,6 +12,8 @@ import {
   AUTHOR_LINK,
   AUTHOR_IMAGE,
 } from "@/lib/articles";
+import { PRODUCT_CATALOG, amazonUrl } from "@/lib/product-catalog";
+import { ShoppingBag, ArrowRight, BookOpen, Moon, Pill, Volume2, Brain } from "lucide-react";
 
 const HERO_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-main-G8BGiPee7cKWnu546UahU7.webp";
 const NEWSLETTER_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-newsletter-f6YB5NtpTcbbPgA3nEpMJj.webp";
@@ -259,6 +261,74 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURED PRODUCTS ===== */}
+      <section className="py-20 bg-gradient-to-b from-[var(--twilight)]/[0.04] to-background">
+        <div className="container">
+          <FadeInSection>
+            <div className="text-center mb-12">
+              <span className="text-[var(--aurora)] text-sm font-medium tracking-widest uppercase">Gear Guide</span>
+              <h2 className="font-heading text-3xl md:text-4xl font-800 mt-2 text-foreground">Essential Dreaming Tools</h2>
+              <p className="text-muted-foreground mt-3 max-w-xl mx-auto">Hand-picked products that support every stage of your lucid dreaming practice.</p>
+            </div>
+          </FadeInSection>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+            {[
+              { asin: "034537410X", name: "Exploring the World of Lucid Dreaming", cat: "The Classic Guide", icon: <BookOpen className="w-4 h-4" /> },
+              { asin: "B09T39P48Z", name: "Dream Journal for Lucid Dreaming", cat: "Dream Journal", icon: <BookOpen className="w-4 h-4" /> },
+              { asin: "B0B14QQV6R", name: "MZOO Luxury Sleep Mask", cat: "Sleep Mask", icon: <Moon className="w-4 h-4" /> },
+              { asin: "B07PCVWM6N", name: "Dream Leaf Pro Supplement", cat: "Supplement", icon: <Pill className="w-4 h-4" /> },
+              { asin: "B07RWRJ4XW", name: "Magicteam Sound Machine", cat: "Sound Machine", icon: <Volume2 className="w-4 h-4" /> },
+              { asin: "B0093162RM", name: "Philips SmartSleep Wake-up Light", cat: "Sleep Tech", icon: <Brain className="w-4 h-4" /> },
+              { asin: "B0CH15QX8V", name: "Mugwort Dream Tea", cat: "Dream Herb", icon: <Pill className="w-4 h-4" /> },
+              { asin: "B07T8DSTW3", name: "ASAKUKI Essential Oil Diffuser", cat: "Aromatherapy", icon: <Moon className="w-4 h-4" /> },
+            ].map((item, i) => (
+              <FadeInSection key={item.asin} delay={i * 80}>
+                <a
+                  href={amazonUrl(item.asin)}
+                  target="_blank"
+                  rel="nofollow noopener"
+                  className="group block p-5 rounded-xl border border-border bg-card hover:shadow-lg hover:border-[var(--aurora)]/30 transition-all duration-300 h-full"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-md bg-[var(--twilight)]/10 flex items-center justify-center text-[var(--twilight)]">
+                      {item.icon}
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">{item.cat}</span>
+                  </div>
+                  <div className="w-16 h-16 rounded-lg bg-white border border-border/50 overflow-hidden mb-3 mx-auto flex items-center justify-center">
+                    <img
+                      src={`https://m.media-amazon.com/images/P/${item.asin}.01._SCLZZZZZZZ_SX200_.jpg`}
+                      alt={item.name}
+                      className="w-full h-full object-contain p-1"
+                      loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                  <h3 className="font-heading text-sm font-700 leading-snug group-hover:text-[var(--aurora-dim)] transition-colors line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <span className="inline-flex items-center gap-1 mt-2 text-[10px] text-muted-foreground/50 italic">paid link</span>
+                </a>
+              </FadeInSection>
+            ))}
+          </div>
+
+          <FadeInSection delay={300}>
+            <div className="text-center mt-10">
+              <Link
+                href="/recommended-products"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--twilight)] text-white font-medium hover:shadow-lg hover:shadow-[var(--twilight)]/30 hover:scale-105 transition-all duration-300"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Browse All 67 Products
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </FadeInSection>
         </div>
       </section>
 
