@@ -22,7 +22,7 @@
  * 5. Sentence length: 18-28 avg, short drops after 3 long ones
  * 6. Cross-traditional: Buddhism, Taoism, neuroscience
  * 7. Uses "we" and "one" more than "you"
- * 8. Amazon affiliate links: 2-4 per article, tag=spankyspinola-20
+ * 8. Amazon affiliate links: MINIMUM 3 per article (3-5 ideal), tag=spankyspinola-20
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
@@ -135,6 +135,54 @@ function humanize(text) {
 }
 
 /**
+ * Validate that article body has at least 3 Amazon affiliate links.
+ * If not, inject universal product recommendations.
+ */
+function ensureMinimumAmazonLinks(body) {
+  const UNIVERSAL_PRODUCTS = [
+    { name: "Exploring the World of Lucid Dreaming", asin: "034537410X", embed: `Stephen LaBerge's <a href="https://www.amazon.com/dp/034537410X?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Exploring the World of Lucid Dreaming</a> (paid link) remains the most practical guide for developing these skills.` },
+    { name: "Lucid Dreaming: Gateway to the Inner Self", asin: "193049114X", embed: `Robert Waggoner's <a href="https://www.amazon.com/dp/193049114X?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Lucid Dreaming: Gateway to the Inner Self</a> (paid link) explores what becomes possible once awareness stabilizes in the dream state.` },
+    { name: "Are You Dreaming?", asin: "0957497709", embed: `Daniel Love's <a href="https://www.amazon.com/dp/0957497709?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Are You Dreaming?</a> (paid link) covers the practical techniques in detail.` },
+    { name: "Why We Sleep", asin: "1501144324", embed: `Matthew Walker's <a href="https://www.amazon.com/dp/1501144324?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Why We Sleep</a> (paid link) is essential for understanding the science behind quality sleep and dreaming.` },
+    { name: "Dream Yoga", asin: "1622034597", embed: `Andrew Holecek's <a href="https://www.amazon.com/dp/1622034597?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Dream Yoga</a> (paid link) bridges Western lucid dreaming with Tibetan contemplative traditions.` },
+    { name: "Moleskine Classic Notebook", asin: "B015NG45Q0", embed: `A dedicated <a href="https://www.amazon.com/dp/B015NG45Q0?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Moleskine Classic Notebook</a> (paid link) by the bed makes dream journaling effortless.` },
+    { name: "Manta Sleep Mask", asin: "B07PRG2CQB", embed: `Total darkness supports deeper REM sleep. A <a href="https://www.amazon.com/dp/B07PRG2CQB?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Manta Sleep Mask</a> (paid link) blocks all light without pressing on the eyelids.` },
+    { name: "Magnesium Glycinate", asin: "B000BD0RT0", embed: `For better sleep quality, <a href="https://www.amazon.com/dp/B000BD0RT0?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Magnesium Glycinate</a> (paid link) supports muscle relaxation and smoother transitions into sleep.` },
+  ];
+
+  const amazonCount = (body.match(/amazon\.com\/dp\//g) || []).length;
+  if (amazonCount >= 3) return body;
+
+  const existingAsins = new Set((body.match(/amazon\.com\/dp\/([A-Z0-9]+)/g) || []).map(m => m.replace('amazon.com/dp/', '')));
+  const needed = 3 - amazonCount;
+  const available = UNIVERSAL_PRODUCTS.filter(p => !existingAsins.has(p.asin));
+
+  // Shuffle and pick
+  for (let i = available.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [available[i], available[j]] = [available[j], available[i]];
+  }
+  const selected = available.slice(0, needed);
+
+  // Insert before last <h2> (conclusion) or at end
+  const lastH2 = body.lastIndexOf("<h2");
+  const insertPos = lastH2 > 0 ? lastH2 : body.lastIndexOf("</p>");
+
+  let injection = "";
+  for (const p of selected) {
+    injection += `\n<p>${p.embed}</p>`;
+  }
+
+  if (insertPos > 0) {
+    body = body.slice(0, insertPos) + injection + "\n" + body.slice(insertPos);
+  } else {
+    body += injection;
+  }
+
+  return body;
+}
+
+/**
  * Build the system prompt for article generation with Kalesh voice.
  */
 function buildSystemPrompt() {
@@ -152,7 +200,7 @@ BANNED WORDS (never use): ${BANNED_WORDS.join(", ")}
 
 DASHES: Never use em-dashes (—) or en-dashes (–). Use ... or - or ~ instead.
 
-AFFILIATE LINKS: Include 2-4 Amazon product links naturally in the text using format:
+AFFILIATE LINKS: Include MINIMUM 3 (ideally 3-5) Amazon product links naturally in the text, recommending products relevant to the article topic. Use format:
 <a href="https://www.amazon.com/dp/ASIN?tag=${AMAZON_TAG}" target="_blank" rel="nofollow noopener">Product Name</a> (paid link)
 
 OUTPUT: Clean HTML paragraphs and headings. No wrapper tags. No markdown.`;
@@ -215,10 +263,16 @@ export async function generateArticles(count = 5) {
   // 1. Pick topics from unused topic pool
   // 2. Call Anthropic with buildSystemPrompt()
   // 3. Post-process with humanize()
-  // 4. Generate hero image via FAL.ai
-  // 5. Convert to WebP, upload to Bunny CDN
-  // 6. Append to articles.json
-  // 7. Commit and push to GitHub
+  // 4. Validate minimum 3 Amazon links with ensureMinimumAmazonLinks()
+  // 5. Generate hero image via FAL.ai
+  // 6. Convert to WebP, upload to Bunny CDN
+  // 7. Append to articles.json
+  // 8. Commit and push to GitHub
+  //
+  // CRITICAL: After generating body text, ALWAYS run:
+  //   body = humanize(body);
+  //   body = ensureMinimumAmazonLinks(body);
+  // This guarantees no banned words, no em-dashes, and 3+ Amazon links.
 
   console.log("[generate] Pipeline stub complete. Full implementation pending API activation.");
 }
