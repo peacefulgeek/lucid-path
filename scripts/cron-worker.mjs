@@ -108,8 +108,31 @@ schedule("0 0 14 * * 6", () => {
   timezone: "UTC",
 });
 
+// ─── PRODUCT VALIDATION: Sundays at 06:00 UTC ───
+schedule("0 0 6 * * 0", () => {
+  console.log("[cron] Starting weekly product validation...");
+  const timeout = setTimeout(() => {
+    console.error("[cron] Product validation timed out after 900s");
+  }, 900000);
+
+  validateProducts().finally(() => clearTimeout(timeout));
+}, {
+  timezone: "UTC",
+});
+
+async function validateProducts() {
+  try {
+    const { validateProducts: validate } = await import("./validate-products.mjs");
+    const report = await validate();
+    console.log(`[cron] Product validation complete: ${report.summary.active} active, ${report.summary.notFound} not found, ${report.summary.unavailable} unavailable`);
+  } catch (err) {
+    console.error("[cron] Product validation failed:", err);
+  }
+}
+
 const phase = getCurrentPhase();
 console.log(`[cron] Worker started. Current: ${phase.label}`);
 console.log(`[cron] Phase 1 ends: ${PHASE_1_END.toISOString()}`);
 console.log(`[cron] Product spotlight: Saturdays at 14:00 UTC`);
+console.log(`[cron] Product validation: Sundays at 06:00 UTC`);
 console.log(`[cron] AUTO_GEN_ENABLED: ${AUTO_GEN_ENABLED}`);
