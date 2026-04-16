@@ -1,9 +1,9 @@
 /**
  * RecommendedProducts.tsx
  * Standalone gear guide page showcasing all 67 verified Amazon products by category.
- * Design: Twilight Ethereal — editorial gear guide with premium card layout.
+ * Design: Twilight Ethereal — editorial gear guide with premium card layout + product images.
  */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { SITE_NAME, AUTHOR_NAME } from "@/lib/articles";
 import { PRODUCT_CATALOG, amazonUrl, type Product } from "@/lib/product-catalog";
@@ -20,10 +20,32 @@ import {
   Droplets,
   BedDouble,
   Sparkles,
-  ChevronDown,
   Star,
   ShoppingBag,
+  ImageOff,
 } from "lucide-react";
+
+/* ── Amazon product image URL helper ── */
+function amazonImageUrl(asin: string): string {
+  return `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX200_.jpg`;
+}
+
+/* ── Category icon map for fallback ── */
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  books: <BookOpen className="w-8 h-8" />,
+  journals: <Star className="w-8 h-8" />,
+  supplements: <Pill className="w-8 h-8" />,
+  herbs: <Leaf className="w-8 h-8" />,
+  "sleep-masks": <Moon className="w-8 h-8" />,
+  sound: <Volume2 className="w-8 h-8" />,
+  "sleep-tech": <Brain className="w-8 h-8" />,
+  "brain-tech": <Sparkles className="w-8 h-8" />,
+  meditation: <Lamp className="w-8 h-8" />,
+  aromatherapy: <Droplets className="w-8 h-8" />,
+  "blue-light": <Glasses className="w-8 h-8" />,
+  "weighted-blankets": <BedDouble className="w-8 h-8" />,
+  decor: <Sparkles className="w-8 h-8" />,
+};
 
 /* ── Category display config ── */
 interface CategoryConfig {
@@ -128,18 +150,70 @@ const CATEGORY_CONFIG: CategoryConfig[] = [
   },
 ];
 
+/* ── Product image component with fallback ── */
+function ProductImage({ product }: { product: Product }) {
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const handleError = useCallback(() => setImgError(true), []);
+  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    // Amazon returns a tiny 1x1 pixel for missing images (43 bytes / ~1x1 dimensions)
+    if (img.naturalWidth <= 2 || img.naturalHeight <= 2) {
+      setImgError(true);
+    } else {
+      setImgLoaded(true);
+    }
+  }, []);
+
+  if (imgError) {
+    return (
+      <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground/40 shrink-0">
+        {CATEGORY_ICONS[product.category] || <ImageOff className="w-8 h-8" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-white border border-border/50 overflow-hidden shrink-0 flex items-center justify-center">
+      {!imgLoaded && (
+        <div className="absolute w-20 h-20 md:w-24 md:h-24 bg-muted/30 animate-pulse rounded-lg" />
+      )}
+      <img
+        src={amazonImageUrl(product.asin)}
+        alt={product.name}
+        className={`w-full h-full object-contain p-1.5 transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+        onError={handleError}
+        onLoad={handleLoad}
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
 /* ── Product card component ── */
 function ProductCard({ product, index }: { product: Product; index: number }) {
   return (
-    <div className="group relative p-5 rounded-xl border border-border bg-card hover:shadow-lg hover:border-[var(--aurora)]/30 transition-all duration-300">
+    <div className="group relative p-4 md:p-5 rounded-xl border border-border bg-card hover:shadow-lg hover:border-[var(--aurora)]/30 transition-all duration-300">
       {/* Number badge */}
-      <div className="absolute -top-2.5 -left-2.5 w-7 h-7 rounded-full bg-[var(--twilight)] text-white text-xs font-bold flex items-center justify-center shadow-sm">
+      <div className="absolute -top-2.5 -left-2.5 w-7 h-7 rounded-full bg-[var(--twilight)] text-white text-xs font-bold flex items-center justify-center shadow-sm z-10">
         {index + 1}
       </div>
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-4">
+        {/* Product image */}
+        <a
+          href={amazonUrl(product.asin)}
+          target="_blank"
+          rel="nofollow noopener"
+          className="block shrink-0"
+        >
+          <ProductImage product={product} />
+        </a>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-heading text-base font-700 mb-1.5 leading-snug">
+          <h3 className="font-heading text-sm md:text-base font-700 mb-1 leading-snug">
             <a
               href={amazonUrl(product.asin)}
               target="_blank"
@@ -147,10 +221,10 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               className="hover:text-[var(--aurora-dim)] transition-colors inline-flex items-start gap-1.5"
             >
               <span>{product.name}</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 mt-1 shrink-0 transition-opacity" />
+              <ExternalLink className="w-3 h-3 opacity-40 group-hover:opacity-70 mt-0.5 shrink-0 transition-opacity" />
             </a>
           </h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-xs md:text-sm leading-relaxed text-muted-foreground line-clamp-3">
             {product.embedding}
           </p>
         </div>
@@ -159,7 +233,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       {/* Bottom row */}
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">
-          {product.category.replace(/-/g, " ")}
+          {product.category.replace(/-/g, " ")} &middot; <em>paid link</em>
         </span>
         <a
           href={amazonUrl(product.asin)}
@@ -171,8 +245,6 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           View on Amazon
         </a>
       </div>
-
-      <p className="text-[10px] text-muted-foreground/50 mt-2 italic">paid link</p>
     </div>
   );
 }
@@ -200,7 +272,6 @@ export default function RecommendedProducts() {
   // Filter categories that have products
   const visibleCategories = useMemo(() => {
     return CATEGORY_CONFIG.filter((cat) => {
-      // Books category includes multiple catalog categories
       if (cat.slug === "books") {
         return productsByCategory["books"] && productsByCategory["books"].length > 0;
       }

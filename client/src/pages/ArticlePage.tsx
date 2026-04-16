@@ -17,6 +17,7 @@ import {
 } from "@/lib/articles";
 import ArticleCard from "@/components/ArticleCard";
 import NewsletterForm from "@/components/NewsletterForm";
+import GearGuideCTA from "@/components/GearGuideCTA";
 import { Clock, Share2, Facebook, Twitter, Linkedin, Copy, Check, ChevronLeft, ExternalLink, AlertTriangle } from "lucide-react";
 
 function ShareButtons({ article }: { article: Article }) {
@@ -448,12 +449,8 @@ export default function ArticlePage() {
             </div>
 
             {/* Tools recommendation link */}
-            <div className="mt-6 p-4 rounded-lg bg-muted/50 text-center">
-              <p className="text-sm text-muted-foreground mb-2">Looking for tools to support your practice?</p>
-              <Link href="/tools" className="text-sm text-[var(--aurora-dim)] hover:underline font-medium">
-                Browse Our Recommended Tools →
-              </Link>
-            </div>
+            {/* Gear Guide CTA */}
+            <GearGuideCTA />
           </div>
 
           {/* Right: Sidebar (40%) */}
