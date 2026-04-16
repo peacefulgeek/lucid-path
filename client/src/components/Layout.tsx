@@ -100,6 +100,7 @@ export default function Layout({ children }: LayoutProps) {
               { href: "/articles", label: "All" },
               ...CATEGORIES.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
               { href: "/tools", label: "Tools" },
+              { href: "/recommended-products", label: "Gear Guide" },
               { href: "/start-here", label: "Start Here" },
               { href: "/about", label: "About" },
             ].map((item) => (
@@ -151,6 +152,7 @@ export default function Layout({ children }: LayoutProps) {
                 { href: "/articles", label: "All Articles" },
                 ...CATEGORIES.map((c) => ({ href: `/category/${c.slug}`, label: c.name })),
                 { href: "/tools", label: "Tools We Recommend" },
+                { href: "/recommended-products", label: "Gear Guide" },
                 { href: "/quizzes", label: "Quizzes" },
                 { href: "/assessments", label: "Assessments" },
                 { href: "/start-here", label: "Start Here" },
@@ -218,6 +220,7 @@ export default function Layout({ children }: LayoutProps) {
               <h4 className="font-heading text-xs font-600 uppercase tracking-[0.2em] text-[var(--aurora)]/80 mb-4">Resources</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/tools" className="text-sm text-white/55 hover:text-[var(--aurora)] transition-colors duration-300">Tools We Recommend</Link></li>
+                <li><Link href="/recommended-products" className="text-sm text-white/55 hover:text-[var(--aurora)] transition-colors duration-300">Gear Guide</Link></li>
                 <li><Link href="/quizzes" className="text-sm text-white/55 hover:text-[var(--aurora)] transition-colors duration-300">Quizzes</Link></li>
                 <li><Link href="/assessments" className="text-sm text-white/55 hover:text-[var(--aurora)] transition-colors duration-300">Assessments</Link></li>
                 <li><Link href="/start-here" className="text-sm text-white/55 hover:text-[var(--aurora)] transition-colors duration-300">Start Here</Link></li>

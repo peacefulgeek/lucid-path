@@ -19,6 +19,7 @@ const TechniqueFinder = lazy(() => import("./pages/TechniqueFinder"));
 const ToolsPage = lazy(() => import("./pages/ToolsPage"));
 const QuizzesPage = lazy(() => import("./pages/QuizzesPage"));
 const AssessmentsPage = lazy(() => import("./pages/AssessmentsPage"));
+const RecommendedProducts = lazy(() => import("./pages/RecommendedProducts"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function PageLoader() {
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/tools" component={ToolsPage} />
         <Route path="/quizzes" component={QuizzesPage} />
         <Route path="/assessments" component={AssessmentsPage} />
+        <Route path="/recommended-products" component={RecommendedProducts} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
