@@ -1,138 +1,89 @@
 #!/usr/bin/env node
 /**
  * cron-worker.mjs
- * Phased article generation schedule:
- *   Phase 1 (first 12 weeks): 5 articles/day, Mon-Fri at 12:00 UTC
- *   Phase 2 (after 12 weeks): 5 articles/week, Mondays at 12:00 UTC
+ * All 5 cron schedules for The Lucid Path, gated by AUTO_GEN_ENABLED env var.
+ * No Manus. No external dispatcher. Runs inside the web service process.
  *
- * Product spotlight: 1 spotlight article every Saturday at 14:00 UTC
- *
- * AUTO_GEN_ENABLED = false — flip to true on GitHub when ready.
- * All API keys from process.env. 600s timeout per run.
+ * Schedule reference:
+ * | # | Schedule                        | Cron Expression      | Job                          |
+ * |---|--------------------------------|----------------------|------------------------------|
+ * | 1 | Mon-Fri 06:00 UTC              | 0 6 * * 1-5         | Article generation (5/week)  |
+ * | 2 | Saturday 08:00 UTC             | 0 8 * * 6           | Product spotlight (1/week)   |
+ * | 3 | 1st of month 03:00 UTC         | 0 3 1 * *           | Monthly content refresh      |
+ * | 4 | Jan/Apr/Jul/Oct 1st 04:00 UTC  | 0 4 1 1,4,7,10 *    | Quarterly content refresh    |
+ * | 5 | Sunday 05:00 UTC               | 0 5 * * 0           | ASIN health check            |
  */
 
-import { schedule } from "node-cron";
+import cron from "node-cron";
 
-const AUTO_GEN_ENABLED = false;
+export function registerCronJobs() {
+  const AUTO_GEN = process.env.AUTO_GEN_ENABLED === "true";
 
-// Phase 1 launch date — set this to the actual go-live date
-const LAUNCH_DATE = new Date("2026-04-01T00:00:00Z");
-const PHASE_1_WEEKS = 12;
-const PHASE_1_END = new Date(LAUNCH_DATE.getTime() + PHASE_1_WEEKS * 7 * 24 * 60 * 60 * 1000);
-
-function getCurrentPhase() {
-  const now = new Date();
-  if (now < PHASE_1_END) {
-    return { phase: 1, label: "Phase 1: 5 articles/day Mon-Fri", articlesPerRun: 5 };
-  }
-  return { phase: 2, label: "Phase 2: 5 articles/week Mondays", articlesPerRun: 5 };
-}
-
-async function generateArticles(count) {
-  if (!AUTO_GEN_ENABLED) {
-    console.log("[cron] Auto-gen is disabled. Set AUTO_GEN_ENABLED = true to activate.");
+  if (!AUTO_GEN) {
+    console.log('[cron] AUTO_GEN_ENABLED != "true" — cron disabled');
     return;
   }
 
-  const phase = getCurrentPhase();
-  console.log(`[cron] ${phase.label} — Generating ${count} articles...`);
-  const startTime = Date.now();
+  // 1. Article generation — Mon-Fri 06:00 UTC (5/week)
+  cron.schedule('0 6 * * 1-5', async () => {
+    console.log(`[cron] generate-article ${new Date().toISOString()}`);
+    try {
+      const { generateNewArticle } = await import("./cron/generate-article.mjs");
+      await generateNewArticle();
+    } catch (e) {
+      console.error("[cron] generate-article failed:", e);
+    }
+  }, { timezone: "UTC" });
 
-  try {
-    const { generateArticles: gen } = await import("./generate-articles.mjs");
-    await gen(count);
+  // 2. Product spotlight — Saturday 08:00 UTC (1/week)
+  cron.schedule('0 8 * * 6', async () => {
+    console.log(`[cron] product-spotlight ${new Date().toISOString()}`);
+    try {
+      const { generateProductSpotlight } = await import("./cron/product-spotlight.mjs");
+      await generateProductSpotlight();
+    } catch (e) {
+      console.error("[cron] product-spotlight failed:", e);
+    }
+  }, { timezone: "UTC" });
 
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[cron] Generation completed in ${elapsed}s`);
-  } catch (err) {
-    console.error("[cron] Article generation failed:", err);
-  }
+  // 3. Monthly content refresh — 1st of month 03:00 UTC
+  cron.schedule('0 3 1 * *', async () => {
+    console.log(`[cron] refresh-monthly ${new Date().toISOString()}`);
+    try {
+      const { refreshMonthly } = await import("./cron/refresh-monthly.mjs");
+      await refreshMonthly();
+    } catch (e) {
+      console.error("[cron] refresh-monthly failed:", e);
+    }
+  }, { timezone: "UTC" });
+
+  // 4. Quarterly content refresh — Jan/Apr/Jul/Oct 1st at 04:00 UTC
+  cron.schedule('0 4 1 1,4,7,10 *', async () => {
+    console.log(`[cron] refresh-quarterly ${new Date().toISOString()}`);
+    try {
+      const { refreshQuarterly } = await import("./cron/refresh-quarterly.mjs");
+      await refreshQuarterly();
+    } catch (e) {
+      console.error("[cron] refresh-quarterly failed:", e);
+    }
+  }, { timezone: "UTC" });
+
+  // 5. ASIN health check — Sundays 05:00 UTC
+  cron.schedule('0 5 * * 0', async () => {
+    console.log(`[cron] asin-health-check ${new Date().toISOString()}`);
+    try {
+      const { verifyAffiliateLinks } = await import("./cron/verify-affiliates.mjs");
+      await verifyAffiliateLinks();
+    } catch (e) {
+      console.error("[cron] asin-health-check failed:", e);
+    }
+  }, { timezone: "UTC" });
+
+  console.log("[cron] All 5 schedules registered (AUTO_GEN_ENABLED=true)");
 }
 
-async function generateProductSpotlight() {
-  if (!AUTO_GEN_ENABLED) {
-    console.log("[cron] Auto-gen is disabled. Skipping product spotlight.");
-    return;
-  }
-
-  console.log("[cron] Generating weekly product spotlight article...");
-  const startTime = Date.now();
-
-  try {
-    const { generateSpotlight } = await import("./generate-articles.mjs");
-    await generateSpotlight();
-
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[cron] Product spotlight completed in ${elapsed}s`);
-  } catch (err) {
-    console.error("[cron] Product spotlight generation failed:", err);
-  }
+// If run directly (not imported), register immediately
+const isDirectRun = process.argv[1]?.includes("cron-worker");
+if (isDirectRun) {
+  registerCronJobs();
 }
-
-// ─── PHASE 1: Mon-Fri at 12:00 UTC (5 articles/day) ───
-schedule("0 0 12 * * 1-5", () => {
-  const phase = getCurrentPhase();
-  if (phase.phase !== 1) return; // Phase 1 expired, skip
-
-  const timeout = setTimeout(() => {
-    console.error("[cron] Generation timed out after 600s");
-  }, 600000);
-
-  generateArticles(5).finally(() => clearTimeout(timeout));
-}, {
-  timezone: "UTC",
-});
-
-// ─── PHASE 2: Mondays only at 12:00 UTC (5 articles/week) ───
-schedule("0 0 12 * * 1", () => {
-  const phase = getCurrentPhase();
-  if (phase.phase !== 2) return; // Still in Phase 1, skip
-
-  const timeout = setTimeout(() => {
-    console.error("[cron] Generation timed out after 600s");
-  }, 600000);
-
-  generateArticles(5).finally(() => clearTimeout(timeout));
-}, {
-  timezone: "UTC",
-});
-
-// ─── PRODUCT SPOTLIGHT: Saturdays at 14:00 UTC ───
-schedule("0 0 14 * * 6", () => {
-  const timeout = setTimeout(() => {
-    console.error("[cron] Product spotlight timed out after 600s");
-  }, 600000);
-
-  generateProductSpotlight().finally(() => clearTimeout(timeout));
-}, {
-  timezone: "UTC",
-});
-
-// ─── PRODUCT VALIDATION: Sundays at 06:00 UTC ───
-schedule("0 0 6 * * 0", () => {
-  console.log("[cron] Starting weekly product validation...");
-  const timeout = setTimeout(() => {
-    console.error("[cron] Product validation timed out after 900s");
-  }, 900000);
-
-  validateProducts().finally(() => clearTimeout(timeout));
-}, {
-  timezone: "UTC",
-});
-
-async function validateProducts() {
-  try {
-    const { validateProducts: validate } = await import("./validate-products.mjs");
-    const report = await validate();
-    console.log(`[cron] Product validation complete: ${report.summary.active} active, ${report.summary.notFound} not found, ${report.summary.unavailable} unavailable`);
-  } catch (err) {
-    console.error("[cron] Product validation failed:", err);
-  }
-}
-
-const phase = getCurrentPhase();
-console.log(`[cron] Worker started. Current: ${phase.label}`);
-console.log(`[cron] Phase 1 ends: ${PHASE_1_END.toISOString()}`);
-console.log(`[cron] Product spotlight: Saturdays at 14:00 UTC`);
-console.log(`[cron] Product validation: Sundays at 06:00 UTC`);
-console.log(`[cron] AUTO_GEN_ENABLED: ${AUTO_GEN_ENABLED}`);

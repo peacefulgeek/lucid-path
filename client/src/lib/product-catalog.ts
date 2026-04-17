@@ -151,12 +151,24 @@ export const PRODUCT_CATALOG: Product[] = [
 /**
  * Topic-matching engine: finds relevant products for an article based on title, category, and keywords
  */
-export function matchProducts(articleTitle: string, articleCategory: string, maxProducts: number = 4): Product[] {
+export function matchProducts({ articleTitle, articleTags = [], articleCategory, catalog, minLinks = 3, maxLinks = 4 }: {
+  articleTitle: string;
+  articleTags?: string[];
+  articleCategory: string;
+  catalog?: Product[];
+  minLinks?: number;
+  maxLinks?: number;
+}): Product[] {
+  if (typeof articleTitle !== 'string') throw new TypeError('articleTitle must be string');
+  if (!Array.isArray(articleTags)) throw new TypeError('articleTags must be array');
+  if (typeof articleCategory !== 'string') throw new TypeError('articleCategory must be string');
+
+  const products = catalog || PRODUCT_CATALOG;
   const titleLower = articleTitle.toLowerCase();
   const catLower = articleCategory.toLowerCase();
   
   // Score each product by keyword relevance
-  const scored = PRODUCT_CATALOG.map(product => {
+  const scored = products.map(product => {
     let score = 0;
     
     // Check keyword matches against article title
@@ -211,7 +223,7 @@ export function matchProducts(articleTitle: string, articleCategory: string, max
     if (seen.has(product.asin)) continue;
     seen.add(product.asin);
     results.push(product);
-    if (results.length >= maxProducts) break;
+    if (results.length >= maxLinks) break;
   }
   
   return results;
