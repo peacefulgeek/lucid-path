@@ -52,3 +52,4 @@
 - [x] All grep checks pass (10/10 verification checks passed)
 - [x] Build succeeds (pnpm build completed in 5.36s)
 - [x] Push to GitHub (pushed to peacefulgeek/lucid-path main)
+- [x] Server-side 301 redirect from www to non-www
