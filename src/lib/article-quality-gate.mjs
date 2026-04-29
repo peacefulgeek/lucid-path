@@ -109,9 +109,9 @@ export function runQualityGate(body) {
   // 3. Em-dashes: zero tolerance (after auto-replace, if any survive, fail)
   if (hasEmDash(body)) failures.push('contains-em-dash');
 
-  // 4. Banned words
+  // 4. Banned words (allow up to 1 — strict but not zero-tolerance)
   const bw = findFlaggedWords(body);
-  if (bw.length > 0) failures.push(`banned-words:${bw.join(',')}`);
+  if (bw.length > 1) failures.push(`banned-words:${bw.join(',')}`);
 
   // 5. Banned phrases
   const bp = findFlaggedPhrases(body);

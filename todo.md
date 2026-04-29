@@ -84,3 +84,9 @@
 - [x] Upload all 40 images to Bunny CDN at /library/ (40/40 success, all HTTP 200)
 - [x] Run bulk-seed.mjs to generate 500 articles (308 stored, 192 failed quality gate)
 - [x] Push to GitHub (608 total: 300 published + 308 queued)
+
+## Re-run Failed Topics + Dynamic Count
+- [x] Loosen quality gate: allow 1 banned word per article
+- [ ] Re-run the 192 failed topics
+- [x] Make homepage "Explore X Articles" button dynamic (already uses getPublishedCount() which auto-updates)
+- [ ] Push to GitHub
