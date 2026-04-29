@@ -27,6 +27,9 @@ export interface Article {
   heroImage: string;
   ogImage: string;
   body?: string;
+  status?: 'published' | 'queued';
+  queued_at?: string;
+  published_at?: string;
 }
 
 export const CATEGORIES = [
@@ -52,7 +55,11 @@ const allArticles: Article[] = (articlesData as any).articles;
 
 export function filterPublished(articles: Article[] = allArticles): Article[] {
   const now = new Date();
-  return articles.filter((a) => new Date(a.dateISO) <= now);
+  return articles.filter((a) => {
+    // Only show published articles (or articles without a status field for backwards compat)
+    if (a.status && a.status !== 'published') return false;
+    return new Date(a.dateISO) <= now;
+  });
 }
 
 export function getPublishedArticles(): Article[] {

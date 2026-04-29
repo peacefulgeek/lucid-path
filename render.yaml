@@ -20,9 +20,7 @@ services:
         value: "true"
       - key: DATABASE_URL
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: FAL_KEY
+      - key: OPENAI_API_KEY
         sync: false
       - key: BUNNY_STORAGE_ZONE
         sync: false

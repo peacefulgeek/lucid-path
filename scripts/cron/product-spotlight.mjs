@@ -1,16 +1,25 @@
 /**
  * product-spotlight.mjs
- * Weekly product spotlight article generation.
- * Picks a product from the catalog and generates a focused review article.
+ * Weekly product spotlight — Saturdays 08:00 UTC.
+ * Generates a review of a verified ASIN using DeepSeek V4-Pro.
+ * Uses assignHeroImage(). Inserts directly as status='published'.
  */
 
+import OpenAI from 'openai';
 import { runQualityGate, GENERATION_HARD_RULES } from '../../src/lib/article-quality-gate.mjs';
-import { verifyAsin, extractAsinsFromText, buildAmazonUrl } from '../../src/lib/amazon-verify.mjs';
+import { verifyAsin } from '../../src/lib/amazon-verify.mjs';
+import { assignHeroImage } from '../../src/lib/image-pipeline.mjs';
 import fs from 'fs';
 import path from 'path';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const AMAZON_TAG = process.env.AMAZON_TAG || 'spankyspinola-20';
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com'
+});
+
+const MODEL = process.env.OPENAI_MODEL || 'deepseek-v4-pro';
 
 function loadCatalog() {
   try {
@@ -30,8 +39,8 @@ function loadCatalog() {
 }
 
 export async function generateProductSpotlight() {
-  if (!ANTHROPIC_API_KEY) {
-    console.error('[spotlight] ANTHROPIC_API_KEY not set');
+  if (!process.env.OPENAI_API_KEY) {
+    console.error('[spotlight] OPENAI_API_KEY not set');
     return { stored: false, reason: 'no-api-key' };
   }
 
@@ -47,8 +56,8 @@ export async function generateProductSpotlight() {
     return { stored: false, reason: 'product-invalid' };
   }
 
-  // Generate spotlight article with quality gate
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // 4-attempt quality gate
+  for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const relatedProducts = catalog
         .filter(p => p.category === product.category && p.asin !== product.asin)
@@ -57,56 +66,61 @@ export async function generateProductSpotlight() {
       const allProducts = [product, ...relatedProducts];
       const catalogSnippet = allProducts.map(p => `- ${p.name} (ASIN: ${p.asin})`).join('\n');
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4096,
-          system: `You are a lucid dreaming expert writing a product spotlight review for The Lucid Path blog. Focus on "${product.name}" as the main product, but naturally mention 2-3 related products.
+      const response = await client.chat.completions.create({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a lucid dreaming expert writing a product spotlight review for The Lucid Path blog. Focus on "${product.name}" as the main product, but naturally mention 2-3 related products.
 
 Available products:
 ${catalogSnippet}
 
-Amazon link format: https://www.amazon.com/dp/ASIN?tag=${AMAZON_TAG}
+Amazon link format: <a href="https://www.amazon.com/dp/ASIN?tag=${AMAZON_TAG}" target="_blank" rel="nofollow sponsored">Product Name (paid link)</a>
 
-${GENERATION_HARD_RULES}`,
-          messages: [{
+${GENERATION_HARD_RULES}`
+          },
+          {
             role: 'user',
             content: `Write a product spotlight review article about "${product.name}" for lucid dreamers. Explain how it helps with lucid dreaming practice, who it's best for, and how to use it effectively. Return as HTML with <h1> title.`
-          }]
-        })
+          }
+        ],
+        temperature: 0.72
       });
 
-      if (!res.ok) throw new Error(`Anthropic ${res.status}`);
-      const data = await res.json();
-      const body = data.content[0]?.text || '';
-
+      const body = response.choices[0]?.message?.content || '';
       const gate = runQualityGate(body);
+
       if (gate.passed) {
         const titleMatch = body.match(/<h1[^>]*>(.*?)<\/h1>/i);
         const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `Product Spotlight: ${product.name}`;
         const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-        const articlesPath = path.resolve(import.meta.dirname, '../../client/src/data/articles.json');
-        let articles = {};
-        try { articles = JSON.parse(fs.readFileSync(articlesPath, 'utf-8')); } catch {}
+        // Assign hero image
+        const heroImage = await assignHeroImage(slug);
 
-        articles[slug] = {
-          title, slug, category: product.category, body,
-          publishedAt: new Date().toISOString(),
+        // Store as published
+        const articlesPath = path.resolve(import.meta.dirname, '../../client/src/data/articles.json');
+        let data = {};
+        try { data = JSON.parse(fs.readFileSync(articlesPath, 'utf-8')); } catch {}
+        if (!data.articles) data.articles = [];
+
+        data.articles.push({
+          title, slug, category: product.category,
+          body: gate.body,
+          status: 'published',
+          published_at: new Date().toISOString(),
+          queued_at: new Date().toISOString(),
+          dateISO: new Date().toISOString().split('T')[0],
+          heroImage, ogImage: heroImage,
           type: 'product-spotlight',
           spotlightAsin: product.asin,
           wordCount: gate.wordCount,
           amazonLinks: gate.amazonLinks
-        };
+        });
 
-        fs.writeFileSync(articlesPath, JSON.stringify(articles, null, 2));
-        console.log(`[spotlight] stored ${slug} (${gate.wordCount} words)`);
+        fs.writeFileSync(articlesPath, JSON.stringify(data, null, 2));
+        console.log(`[spotlight] Published: ${slug} (${gate.wordCount} words)`);
         return { stored: true, attempts: attempt };
       }
 

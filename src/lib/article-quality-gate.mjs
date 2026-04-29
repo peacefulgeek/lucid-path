@@ -1,105 +1,66 @@
 /**
  * article-quality-gate.mjs
- * Full article quality gate: word count, em-dashes, AI words, voice signals.
- * Every article must pass ALL checks before storage.
+ * The Paul Voice Gate. Every article must pass ALL checks before storage.
+ * Non-negotiable. If it fails, regenerate (up to 4 attempts). Do not store failed articles.
  */
 
 import { countAmazonLinks, extractAsinsFromText } from './amazon-verify.mjs';
 
-// Words that flag content as AI-generated. Pulled from public AI-detection research
-// (Originality.ai, GPTZero, Copyleaks) and Google's Helpful Content Update patterns.
+// ─── BANNED WORDS (regex match, case-insensitive) ───
+// If ANY appear → FAIL AND REGENERATE
 const AI_FLAGGED_WORDS = [
-  // The classic AI tells
-  'delve', 'tapestry', 'paradigm', 'synergy', 'leverage', 'unlock', 'empower',
-  'utilize', 'pivotal', 'embark', 'underscore', 'paramount', 'seamlessly',
-  'robust', 'beacon', 'foster', 'elevate', 'curate', 'curated', 'bespoke',
-  'resonate', 'harness', 'intricate', 'plethora', 'myriad', 'comprehensive',
-  // Marketing fluff that AI loves
-  'transformative', 'groundbreaking', 'innovative', 'cutting-edge', 'revolutionary',
-  'state-of-the-art', 'ever-evolving', 'game-changing', 'next-level', 'world-class',
-  'unparalleled', 'unprecedented', 'remarkable', 'extraordinary', 'exceptional',
-  // Abstract filler
-  'profound', 'holistic', 'nuanced', 'multifaceted', 'stakeholders',
-  'ecosystem', 'landscape', 'realm', 'sphere', 'domain',
-  // AI hedging
-  'arguably', 'notably', 'crucially', 'importantly', 'essentially',
-  'fundamentally', 'inherently', 'intrinsically', 'substantively',
-  // Bullshit verbs
-  'streamline', 'optimize', 'facilitate', 'amplify', 'catalyze',
-  'propel', 'spearhead', 'orchestrate', 'navigate', 'traverse',
-  // AI-favorite connectors
-  'furthermore', 'moreover', 'additionally', 'consequently', 'subsequently',
-  'thereby', 'thusly', 'wherein', 'whereby'
+  'utilize', 'delve', 'tapestry', 'landscape', 'paradigm', 'synergy',
+  'leverage', 'unlock', 'empower', 'pivotal', 'embark', 'underscore',
+  'paramount', 'seamlessly', 'robust', 'beacon', 'foster', 'elevate',
+  'curate', 'curated', 'bespoke', 'resonate', 'harness', 'intricate',
+  'plethora', 'myriad', 'groundbreaking', 'innovative', 'cutting-edge',
+  'state-of-the-art', 'game-changer', 'ever-evolving', 'rapidly-evolving',
+  'stakeholders', 'navigate', 'ecosystem', 'framework', 'comprehensive',
+  'transformative', 'holistic', 'nuanced', 'multifaceted', 'profound',
+  'furthermore'
 ];
 
-// Phrases that scream AI even if the words are fine in isolation
+// ─── BANNED PHRASES (string match, case-insensitive) ───
+// If ANY appear → FAIL AND REGENERATE
 const AI_FLAGGED_PHRASES = [
   "it's important to note that",
   "it's worth noting that",
-  "it's worth mentioning",
-  "it's crucial to",
-  "it is essential to",
-  "in conclusion,",
-  "in summary,",
-  "to summarize,",
+  "in conclusion",
+  "in summary",
   "a holistic approach",
-  "unlock your potential",
-  "unlock the power",
   "in the realm of",
-  "in the world of",
   "dive deep into",
-  "dive into",
-  "delve into",
   "at the end of the day",
   "in today's fast-paced world",
-  "in today's digital age",
-  "in today's modern world",
-  "in this digital age",
-  "when it comes to",
-  "navigate the complexities",
-  "a testament to",
-  "speaks volumes",
-  "the power of",
-  "the beauty of",
-  "the art of",
-  "the journey of",
-  "the key lies in",
-  "plays a crucial role",
-  "plays a vital role",
-  "plays a significant role",
-  "plays a pivotal role",
-  "a wide array of",
-  "a wide range of",
-  "a plethora of",
-  "a myriad of",
-  "stands as a",
-  "serves as a",
-  "acts as a",
-  "has emerged as",
-  "continues to evolve",
-  "has revolutionized",
-  "cannot be overstated",
-  "it goes without saying",
-  "needless to say",
-  "last but not least",
-  "first and foremost"
+  "plays a crucial role"
 ];
 
 export function countWords(text) {
-  // Strip HTML tags for an accurate prose word count
   const stripped = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   return stripped ? stripped.split(/\s+/).length : 0;
 }
 
+/**
+ * Auto-replace em-dashes and en-dashes with " - " (hyphen with spaces).
+ * Returns the cleaned text.
+ */
+export function replaceEmDashes(text) {
+  return text.replace(/[\u2014\u2013]/g, ' - ');
+}
+
+/**
+ * Check if any em-dashes or en-dashes survived after replacement.
+ */
 export function hasEmDash(text) {
-  return text.includes('\u2014');  // em-dash U+2014
+  return /[\u2014\u2013]/.test(text);
 }
 
 export function findFlaggedWords(text) {
   const stripped = text.replace(/<[^>]+>/g, ' ').toLowerCase();
   const found = [];
   for (const w of AI_FLAGGED_WORDS) {
-    if (new RegExp(`\\b${w.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(stripped)) {
+    const escaped = w.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    if (new RegExp(`\\b${escaped}\\b`, 'i').test(stripped)) {
       found.push(w);
     }
   }
@@ -108,133 +69,92 @@ export function findFlaggedWords(text) {
 
 export function findFlaggedPhrases(text) {
   const stripped = text.replace(/<[^>]+>/g, ' ').toLowerCase().replace(/\s+/g, ' ');
-  return AI_FLAGGED_PHRASES.filter(p => stripped.includes(p));
+  return AI_FLAGGED_PHRASES.filter(p => stripped.includes(p.toLowerCase()));
 }
 
-export function voiceSignals(text) {
+/**
+ * Check for dialogue markers per spec:
+ * 2-3 conversational dialogue markers: "Right?!", "Know what I mean?",
+ * "Does that land?", "How does that make you feel?"
+ */
+export function countDialogueMarkers(text) {
   const stripped = text.replace(/<[^>]+>/g, ' ');
-  const lower = stripped.toLowerCase();
-
-  // Contractions (you're, don't, it's, can't, etc.)
-  const contractions = (lower.match(/\b\w+'(s|re|ve|d|ll|m|t)\b/g) || []).length;
-
-  // Direct address (you, your, you're)
-  const directAddress = (lower.match(/\byou('re|r|rself|)?\b/g) || []).length;
-
-  // First person singular (I, I'm, I've, my, me)
-  const firstPerson = (lower.match(/\b(i|i'm|i've|i'd|i'll|my|me|mine)\b/g) || []).length;
-
-  // Sentence length variance
-  const sentences = stripped.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-  const lengths = sentences.map(s => s.split(/\s+/).length);
-  const avg = lengths.reduce((a, b) => a + b, 0) / (lengths.length || 1);
-  const variance = lengths.reduce((sum, len) => sum + Math.pow(len - avg, 2), 0) / (lengths.length || 1);
-  const stdDev = Math.sqrt(variance);
-  const shortSentences = lengths.filter(l => l <= 6).length;
-  const longSentences = lengths.filter(l => l >= 25).length;
-
-  // Conversational markers
-  const conversationalMarkers = [
-    /\bhere's the thing\b/i, /\blook,\s/i, /\bhonestly,?\s/i, /\btruth is\b/i,
-    /\bthe truth\b/i, /\bi'll tell you\b/i, /\bthink about it\b/i,
-    /\bthat said\b/i, /\bbut here's\b/i, /\bso yeah\b/i, /\bkind of\b/i,
-    /\bsort of\b/i, /\byou know\b/i
+  const markers = [
+    /right\?!?/i, /know what i mean\??/i, /does that land\??/i,
+    /how does that make you feel\??/i, /here's the thing/i,
+    /honestly[,.]?\s/i, /look[,.]\s/i, /truth is/i,
+    /think about it/i, /that said/i, /but here's/i,
+    /you know what/i, /get this/i, /wild, right\??/i,
+    /make sense\??/i, /sound familiar\??/i
   ];
-  const markerCount = conversationalMarkers.filter(r => r.test(stripped)).length;
-
-  return {
-    contractions,
-    directAddress,
-    firstPerson,
-    sentenceCount: sentences.length,
-    avgSentenceLength: +avg.toFixed(1),
-    sentenceStdDev: +stdDev.toFixed(1),
-    shortSentences,
-    longSentences,
-    conversationalMarkers: markerCount
-  };
+  return markers.filter(r => r.test(stripped)).length;
 }
 
 export function runQualityGate(body) {
   const failures = [];
-  const warnings = [];
 
-  // Word count
+  // Step 0: Auto-replace em-dashes before any checks
+  body = replaceEmDashes(body);
+
+  // 1. Word count: hard floor 1200, hard ceiling 2500
   const words = countWords(body);
   if (words < 1200) failures.push(`words-too-low:${words}`);
   if (words > 2500) failures.push(`words-too-high:${words}`);
 
-  // Amazon links
+  // 2. Amazon links: exactly 3 or 4
   const links = countAmazonLinks(body);
   if (links < 3) failures.push(`amazon-links-too-few:${links}`);
   if (links > 4) failures.push(`amazon-links-too-many:${links}`);
 
-  // Em-dash
+  // 3. Em-dashes: zero tolerance (after auto-replace, if any survive, fail)
   if (hasEmDash(body)) failures.push('contains-em-dash');
 
-  // AI-flagged words
+  // 4. Banned words
   const bw = findFlaggedWords(body);
-  if (bw.length > 0) failures.push(`ai-flagged-words:${bw.join(',')}`);
+  if (bw.length > 0) failures.push(`banned-words:${bw.join(',')}`);
 
-  // AI-flagged phrases
+  // 5. Banned phrases
   const bp = findFlaggedPhrases(body);
-  if (bp.length > 0) failures.push(`ai-flagged-phrases:${bp.join('|')}`);
+  if (bp.length > 0) failures.push(`banned-phrases:${bp.join('|')}`);
 
-  // Voice signals
-  const voice = voiceSignals(body);
-  const per1k = (n) => (n / words) * 1000;
+  // 6. Voice: contractions
+  const stripped = body.replace(/<[^>]+>/g, ' ').toLowerCase();
+  const contractions = (stripped.match(/\b\w+'(s|re|ve|d|ll|m|t)\b/g) || []).length;
+  if (contractions < 5) failures.push(`contractions-too-few:${contractions}`);
 
-  // Contractions: at least 4 per 1000 words
-  if (per1k(voice.contractions) < 4) {
-    failures.push(`contractions-too-few:${voice.contractions}(${per1k(voice.contractions).toFixed(1)}/1k)`);
-  }
+  // 7. Voice: direct address ("you")
+  const youCount = (stripped.match(/\byou('re|r)?\b/g) || []).length;
+  if (youCount < 5) failures.push(`direct-address-too-few:${youCount}`);
 
-  // Direct address OR first person must be present
-  if (voice.directAddress === 0 && voice.firstPerson === 0) {
-    failures.push('no-direct-address-or-first-person');
-  }
-
-  // Sentence length variance
-  if (voice.sentenceStdDev < 4) {
-    failures.push(`sentence-variance-too-low:${voice.sentenceStdDev}`);
-  }
-
-  // Must have some short sentences (<=6 words)
-  if (voice.shortSentences < 2) {
-    failures.push(`too-few-short-sentences:${voice.shortSentences}`);
-  }
-
-  // At least 2 conversational markers
-  if (voice.conversationalMarkers < 2) {
-    warnings.push(`conversational-markers-low:${voice.conversationalMarkers}`);
-  }
+  // 8. Dialogue markers: need 2-3
+  const markers = countDialogueMarkers(body);
+  if (markers < 2) failures.push(`dialogue-markers-too-few:${markers}`);
 
   return {
     passed: failures.length === 0,
     failures,
-    warnings,
     wordCount: words,
     amazonLinks: links,
     asins: extractAsinsFromText(body),
-    voice
+    body // return the em-dash-cleaned body
   };
 }
 
 /**
- * HARD RULES prompt amendment for Anthropic generation.
- * Append this to your article-generation system prompt.
+ * HARD RULES prompt for DeepSeek V4-Pro generation.
  */
 export const GENERATION_HARD_RULES = `
-HARD RULES for this article:
-- 1,600 to 2,000 words (strict)
-- Zero em-dashes. Use commas, periods, colons, or parentheses instead.
-- Never use these words: delve, tapestry, paradigm, synergy, leverage, unlock, empower, utilize, pivotal, embark, underscore, paramount, seamlessly, robust, beacon, foster, elevate, curate, curated, bespoke, resonate, harness, intricate, plethora, myriad, comprehensive, transformative, groundbreaking, innovative, cutting-edge, revolutionary, state-of-the-art, ever-evolving, profound, holistic, nuanced, multifaceted, stakeholders, ecosystem, furthermore, moreover, additionally, consequently, subsequently, thereby, streamline, optimize, facilitate, amplify, catalyze.
-- Never use these phrases: "it's important to note," "in conclusion," "in summary," "in the realm of," "dive deep into," "at the end of the day," "in today's fast-paced world," "plays a crucial role," "a testament to," "when it comes to," "cannot be overstated."
-- Contractions throughout. You're. Don't. It's. That's. I've. We'll.
-- Vary sentence length aggressively. Some fragments. Some long ones that stretch across a full breath. Some just three words.
-- Direct address ("you") throughout OR first-person ("I / my") throughout. Pick one.
-- Include at least 2 conversational openers somewhere in the piece: "Here's the thing," "Honestly," "Look," "Truth is," "But here's what's interesting," "Think about it," "That said."
+HARD RULES for this article (violating ANY of these means the article is rejected):
+- 1,200 to 2,500 words (strict).
+- Zero em-dashes or en-dashes. Use commas, periods, colons, or " - " (hyphen with spaces) instead.
+- NEVER use these words: utilize, delve, tapestry, landscape, paradigm, synergy, leverage, unlock, empower, pivotal, embark, underscore, paramount, seamlessly, robust, beacon, foster, elevate, curate, curated, bespoke, resonate, harness, intricate, plethora, myriad, groundbreaking, innovative, cutting-edge, state-of-the-art, game-changer, ever-evolving, rapidly-evolving, stakeholders, navigate, ecosystem, framework, comprehensive, transformative, holistic, nuanced, multifaceted, profound, furthermore.
+- NEVER use these phrases: "it's important to note that", "it's worth noting that", "in conclusion", "in summary", "a holistic approach", "in the realm of", "dive deep into", "at the end of the day", "in today's fast-paced world", "plays a crucial role".
+- Direct address ("you") throughout. Contractions everywhere (don't, can't, it's, you're, we'll).
+- Compassionate, connective tone. Like talking to a friend who genuinely cares.
+- Include 2-3 conversational dialogue markers somewhere in the piece: "Right?!", "Know what I mean?", "Does that land?", "How does that make you feel?", "Sound familiar?", "Get this.", "Wild, right?"
+- Vary sentence length aggressively. Some fragments. Some long ones. Some just three words.
 - Concrete specifics over abstractions. A name. A number. A moment.
-- 3 to 4 Amazon product links embedded naturally in prose, each followed by "(paid link)" in plain text. Use only ASINs from the provided catalog.
-- No em-dashes. No em-dashes. No em-dashes.
+- Exactly 3 or 4 Amazon product links embedded naturally in prose, each followed by "(paid link)" in plain text. Use only ASINs from the provided catalog.
+- Format: <a href="https://www.amazon.com/dp/ASIN?tag=spankyspinola-20" target="_blank" rel="nofollow sponsored">Product Name (paid link)</a>
+- No em-dashes. No en-dashes. Zero. None.
 `.trim();

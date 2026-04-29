@@ -53,3 +53,28 @@
 - [x] Build succeeds (pnpm build completed in 5.36s)
 - [x] Push to GitHub (pushed to peacefulgeek/lucid-path main)
 - [x] Server-side 301 redirect from www to non-www
+
+## FINALSCOPENOCLAUDE Migration
+- [ ] Strip Anthropic SDK, delete ANTHROPIC_API_KEY, FAL_KEY, DEEPSEEK_API_KEY refs
+- [ ] Install openai package, init client with OPENAI_API_KEY + OPENAI_BASE_URL
+- [x] All LLM calls use deepseek-v4-pro via OpenAI client, temperature 0.72
+- [x] Replace FAL image pipeline with Bunny CDN library rotation (40 images)
+- [x] assignHeroImage() downloads from /library/lib-XX.webp, re-uploads to /images/{slug}.webp
+- [x] Hardcode Bunny credentials in the file (not env vars)
+- [x] Articles JSON: status (queued/published), queued_at, published_at fields added
+- [x] All public routes/sitemaps/frontend filter by status='published' only
+- [x] Write bulk-seed.mjs with 500 lucid dreaming topics
+- [x] Bulk seed uses quality gate, inserts as status='queued'
+- [x] Update Paul Voice Gate: exact banned words list from spec
+- [x] Update Paul Voice Gate: exact banned phrases list from spec
+- [x] Em-dash auto-replace then fail if any survive
+- [x] Word count: 1200-2500 hard floor/ceiling
+- [x] Amazon links: exactly 3 or 4 per article
+- [x] Voice: direct address, contractions, 2-3 dialogue markers
+- [x] Cron 1: Article Publisher - Phase 1 (5x/day <60 published) / Phase 2 (1x/weekday >=60)
+- [x] Cron 2: Product Spotlight - Sat 08:00 UTC, uses assignHeroImage()
+- [x] Cron 3: Monthly Refresh - 1st of month 03:00 UTC
+- [x] Cron 4: Quarterly Refresh - 1st Jan/Apr/Jul/Oct 04:00 UTC
+- [x] Cron 5: ASIN Health Check - Sundays 05:00 UTC
+- [x] Delete legacy env vars from render.yaml (FAL_KEY, ANTHROPIC_API_KEY removed)
+- [x] Push to GitHub
