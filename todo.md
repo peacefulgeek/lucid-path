@@ -82,5 +82,5 @@
 ## Library Images + Bulk Seed
 - [x] Generate 40 dreamy/cosmic hero images (lib-01 through lib-40)
 - [x] Upload all 40 images to Bunny CDN at /library/ (40/40 success, all HTTP 200)
-- [ ] Run bulk-seed.mjs to generate 500 articles
-- [ ] Push to GitHub
+- [x] Run bulk-seed.mjs to generate 500 articles (308 stored, 192 failed quality gate)
+- [x] Push to GitHub (608 total: 300 published + 308 queued)
