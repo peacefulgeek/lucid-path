@@ -87,6 +87,6 @@
 
 ## Re-run Failed Topics + Dynamic Count
 - [x] Loosen quality gate: allow 1 banned word per article
-- [ ] Re-run the 192 failed topics
+- [x] Re-run the 192 failed topics (188 stored, 4 permanently failed — total 796 articles)
 - [x] Make homepage "Explore X Articles" button dynamic (already uses getPublishedCount() which auto-updates)
-- [ ] Push to GitHub
+- [x] Push to GitHub (796 total: 300 published + 496 queued)
