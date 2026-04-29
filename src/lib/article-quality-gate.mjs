@@ -144,17 +144,28 @@ export function runQualityGate(body) {
  * HARD RULES prompt for DeepSeek V4-Pro generation.
  */
 export const GENERATION_HARD_RULES = `
-HARD RULES for this article (violating ANY of these means the article is rejected):
-- 1,200 to 2,500 words (strict).
-- Zero em-dashes or en-dashes. Use commas, periods, colons, or " - " (hyphen with spaces) instead.
-- NEVER use these words: utilize, delve, tapestry, landscape, paradigm, synergy, leverage, unlock, empower, pivotal, embark, underscore, paramount, seamlessly, robust, beacon, foster, elevate, curate, curated, bespoke, resonate, harness, intricate, plethora, myriad, groundbreaking, innovative, cutting-edge, state-of-the-art, game-changer, ever-evolving, rapidly-evolving, stakeholders, navigate, ecosystem, framework, comprehensive, transformative, holistic, nuanced, multifaceted, profound, furthermore.
-- NEVER use these phrases: "it's important to note that", "it's worth noting that", "in conclusion", "in summary", "a holistic approach", "in the realm of", "dive deep into", "at the end of the day", "in today's fast-paced world", "plays a crucial role".
-- Direct address ("you") throughout. Contractions everywhere (don't, can't, it's, you're, we'll).
-- Compassionate, connective tone. Like talking to a friend who genuinely cares.
-- Include 2-3 conversational dialogue markers somewhere in the piece: "Right?!", "Know what I mean?", "Does that land?", "How does that make you feel?", "Sound familiar?", "Get this.", "Wild, right?"
-- Vary sentence length aggressively. Some fragments. Some long ones. Some just three words.
-- Concrete specifics over abstractions. A name. A number. A moment.
-- Exactly 3 or 4 Amazon product links embedded naturally in prose, each followed by "(paid link)" in plain text. Use only ASINs from the provided catalog.
-- Format: <a href="https://www.amazon.com/dp/ASIN?tag=spankyspinola-20" target="_blank" rel="nofollow sponsored">Product Name (paid link)</a>
-- No em-dashes. No en-dashes. Zero. None.
+HARD RULES — violating ANY of these means instant rejection and regeneration:
+
+1. LENGTH: 1,200 to 2,500 words. Strict.
+
+2. ABSOLUTELY FORBIDDEN WORDS (if you use even ONE, the article is rejected):
+utilize, delve, tapestry, landscape, paradigm, synergy, leverage, unlock, empower, pivotal, embark, underscore, paramount, seamlessly, robust, beacon, foster, elevate, curate, curated, bespoke, resonate, harness, intricate, plethora, myriad, groundbreaking, innovative, cutting-edge, state-of-the-art, game-changer, ever-evolving, rapidly-evolving, stakeholders, navigate, ecosystem, framework, comprehensive, transformative, holistic, nuanced, multifaceted, profound, furthermore.
+Use SIMPLE alternatives instead: "use" not "utilize", "explore" not "delve", "important" not "pivotal", "deep" not "profound", "complete" not "comprehensive", "changing" not "transformative", "detailed" not "nuanced".
+
+3. ABSOLUTELY FORBIDDEN PHRASES:
+"it's important to note that", "it's worth noting that", "in conclusion", "in summary", "a holistic approach", "in the realm of", "dive deep into", "at the end of the day", "in today's fast-paced world", "plays a crucial role".
+
+4. ZERO em-dashes (—) or en-dashes (–). Use commas, periods, colons, or " - " (hyphen with spaces) instead. This is a hard fail.
+
+5. VOICE: Write like you're talking to a friend.
+- Direct address ("you") at least 10 times throughout.
+- Contractions everywhere: don't, can't, it's, you're, we'll, won't, isn't, that's.
+- Include EXACTLY 2 or 3 of these dialogue markers: "Right?!", "Know what I mean?", "Does that land?", "Sound familiar?", "Get this.", "Wild, right?", "Here's the thing.", "Think about it.", "Honestly,"
+
+6. STYLE: Vary sentence length aggressively. Some fragments. Some long ones. Three words sometimes. Concrete specifics over abstractions — a name, a number, a moment.
+
+7. AMAZON LINKS: Exactly 3 or 4 product links from the provided catalog, embedded naturally in prose. Each MUST be followed by "(paid link)" in plain text.
+Format: <a href="https://www.amazon.com/dp/ASIN?tag=spankyspinola-20" target="_blank" rel="nofollow sponsored">Product Name (paid link)</a>
+
+Before submitting, mentally scan your output for ANY of the forbidden words listed in rule 2. If you find even one, rewrite that sentence.
 `.trim();

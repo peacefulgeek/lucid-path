@@ -78,3 +78,9 @@
 - [x] Cron 5: ASIN Health Check - Sundays 05:00 UTC
 - [x] Delete legacy env vars from render.yaml (FAL_KEY, ANTHROPIC_API_KEY removed)
 - [x] Push to GitHub
+
+## Library Images + Bulk Seed
+- [x] Generate 40 dreamy/cosmic hero images (lib-01 through lib-40)
+- [x] Upload all 40 images to Bunny CDN at /library/ (40/40 success, all HTTP 200)
+- [ ] Run bulk-seed.mjs to generate 500 articles
+- [ ] Push to GitHub
