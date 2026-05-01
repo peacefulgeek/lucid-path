@@ -11,7 +11,7 @@ import {
   getPublishedCount,
 } from "@/lib/articles";
 
-const ABOUT_HERO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-about-7D4fknPeUUxtjfRK3SxmG8.webp";
+const ABOUT_HERO = "https://lucid-path.b-cdn.net/heroes/hero-about.webp";
 
 export default function About() {
   useEffect(() => {

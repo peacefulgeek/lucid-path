@@ -15,8 +15,8 @@ import {
 import { PRODUCT_CATALOG, amazonUrl } from "@/lib/product-catalog";
 import { ShoppingBag, ArrowRight, BookOpen, Moon, Pill, Volume2, Brain } from "lucide-react";
 
-const HERO_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-main-G8BGiPee7cKWnu546UahU7.webp";
-const NEWSLETTER_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-newsletter-f6YB5NtpTcbbPgA3nEpMJj.webp";
+const HERO_IMG = "https://lucid-path.b-cdn.net/heroes/hero-main.webp";
+const NEWSLETTER_IMG = "https://lucid-path.b-cdn.net/heroes/hero-newsletter.webp";
 
 function FadeInSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);

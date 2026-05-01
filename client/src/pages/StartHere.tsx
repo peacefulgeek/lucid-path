@@ -10,7 +10,7 @@ import {
   getPublishedCount,
 } from "@/lib/articles";
 
-const START_HERO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663309220512/JcafQeocBTr8RyvmVji4gn/hero-start-LJKJxuXfQJHx5eMCDLvxS5.webp";
+const START_HERO = "https://lucid-path.b-cdn.net/heroes/hero-start.webp";
 
 export default function StartHere() {
   useEffect(() => {
