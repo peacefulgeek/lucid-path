@@ -100,4 +100,4 @@
 - [x] Verify NO Manus Tide or Manus scheduled tasks (none exist)
 - [x] Verify crons are code-only (6 cron.schedule() in cron-worker.mjs, gated by AUTO_GEN_ENABLED)
 - [x] Verify images are article-aligned compressed WebP on Bunny CDN (496/496 on lucid-path.b-cdn.net, all .webp, all HTTP 200)
-- [ ] Push to GitHub and confirm (pending)
+- [x] Push to GitHub and confirm (pushed 7fcd1c5)
